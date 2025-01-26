@@ -26,9 +26,11 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.routing import APIRoute
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.datastructures import URL
 from starlette.middleware.cors import CORSMiddleware
+from starlette.routing import Route
 from typing_extensions import Annotated
 from watchfiles import awatch
 
@@ -55,7 +57,7 @@ from chainlit.data import get_data_layer
 from chainlit.data.acl import is_thread_author
 from chainlit.logger import logger
 from chainlit.markdown import get_markdown_str
-from chainlit.oauth_providers import get_oauth_provider
+from chainlit.oauth_providers import get_oauth_provider, providers
 from chainlit.secret import random_secret
 from chainlit.types import (
     CallActionRequest,
@@ -591,6 +593,51 @@ async def oauth_login(provider_id: str, request: Request):
     set_oauth_state_cookie(response, random)
 
     return response
+
+
+async def select_oauth_callback(
+    request: Request,
+    error: Optional[str] = None,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+):
+    callback_path = request.url.path
+
+    for provider in providers:
+        if provider.callback_url == callback_path:
+            if provider.id == "azure-ad-hybrid":
+                return await oauth_azure_hf_callback(request, error, code, state)
+            return await oauth_callback(provider.id, request, error, code, state)
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Callback url {callback_path} not found",
+    )
+
+
+def _setup_callback_urls():
+    for provider in providers:
+        if provider.is_configured() and provider.callback_url:
+            registered = False
+            for route in app.routes:
+                if isinstance(route, APIRoute) and route.path == provider.callback_url:
+                    registered = True
+                    break
+
+            if not registered:
+                app.add_api_route(
+                    provider.callback_url, select_oauth_callback, methods=["GET"]
+                )
+
+    # Make "serve" route end of list
+    serve_routes = [
+        route
+        for route in app.routes
+        if isinstance(route, Route) and route.name == "serve"
+    ]
+    for route in serve_routes:
+        app.routes.remove(route)
+    app.routes.extend(serve_routes)
 
 
 @router.get("/auth/oauth/{provider_id}/callback")
@@ -1296,5 +1343,6 @@ async def serve(request: Request):
 
 
 app.include_router(router)
+_setup_callback_urls()
 
 import chainlit.socket  # noqa
