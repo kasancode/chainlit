@@ -18,6 +18,7 @@ class OAuthProvider:
     authorize_url: str
     authorize_params: Dict[str, str]
     default_prompt: Optional[str] = None
+    callback_url: Optional[str] = None
 
     def is_configured(self):
         return all([os.environ.get(env) for env in self.env])
@@ -52,6 +53,7 @@ class GithubOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_GITHUB_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_GITHUB_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_GITHUB_CALLBACK_URL", None)
         self.authorize_params = {
             "scope": "user:email",
         }
@@ -111,6 +113,8 @@ class GoogleOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_GOOGLE_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_GOOGLE_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_GOOGLE_CALLBACK_URL", None)
+
         self.authorize_params = {
             "scope": "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
             "response_type": "code",
@@ -180,6 +184,7 @@ class AzureADOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_AZURE_AD_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_AZURE_AD_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_AZURE_AD_CALLBACK_URL", None)
         self.authorize_params = {
             "tenant": os.environ.get("OAUTH_AZURE_AD_TENANT_ID"),
             "response_type": "code",
@@ -265,6 +270,7 @@ class AzureADHybridOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_AZURE_AD_HYBRID_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_AZURE_AD_HYBRID_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_AZURE_AD_HYBRID_CALLBACK_URL", None)
         nonce = random_secret(16)
         self.authorize_params = {
             "tenant": os.environ.get("OAUTH_AZURE_AD_HYBRID_TENANT_ID"),
@@ -344,6 +350,7 @@ class OktaOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_OKTA_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_OKTA_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_OKTA_CALLBACK_URL", None)
         self.authorization_server_id = os.environ.get(
             "OAUTH_OKTA_AUTHORIZATION_SERVER_ID", ""
         )
@@ -414,6 +421,7 @@ class Auth0OAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_AUTH0_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_AUTH0_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_AUTH0_CALLBACK_URL", None)
         # Ensure that the domain does not have a trailing slash
         self.domain = f"https://{os.environ.get('OAUTH_AUTH0_DOMAIN', '').rstrip('/')}"
         self.original_domain = (
@@ -484,6 +492,7 @@ class DescopeOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_DESCOPE_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_DESCOPE_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_DESCOPE_CALLBACK_URL", None)
         self.authorize_params = {
             "response_type": "code",
             "scope": "openid profile email",
@@ -545,6 +554,7 @@ class AWSCognitoOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_COGNITO_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_COGNITO_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_COGNITO_CALLBACK_URL", None)
         self.authorize_params = {
             "response_type": "code",
             "client_id": self.client_id,
@@ -612,6 +622,7 @@ class GitlabOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_GITLAB_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_GITLAB_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_GITLAB_CALLBACK_URL", None)
         # Ensure that the domain does not have a trailing slash
         self.domain = f"https://{os.environ.get('OAUTH_GITLAB_DOMAIN', '').rstrip('/')}"
 
@@ -677,6 +688,7 @@ class KeycloakOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_KEYCLOAK_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_KEYCLOAK_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_KEYCLOAK_CALLBACK_URL", None)
         self.realm = os.environ.get("OAUTH_KEYCLOAK_REALM")
         self.base_url = os.environ.get("OAUTH_KEYCLOAK_BASE_URL")
         self.authorize_url = (
@@ -744,6 +756,7 @@ class GenericOAuthProvider(OAuthProvider):
     def __init__(self):
         self.client_id = os.environ.get("OAUTH_GENERIC_CLIENT_ID")
         self.client_secret = os.environ.get("OAUTH_GENERIC_CLIENT_SECRET")
+        self.callback_url = os.environ.get("OAUTH_GENERIC_CALLBACK_URL", None)
         self.authorize_url = os.environ.get("OAUTH_GENERIC_AUTH_URL")
         self.token_url = os.environ.get("OAUTH_GENERIC_TOKEN_URL")
         self.user_info_url = os.environ.get("OAUTH_GENERIC_USER_INFO_URL")
